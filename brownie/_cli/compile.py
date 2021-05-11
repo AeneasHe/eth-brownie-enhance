@@ -26,6 +26,8 @@ in the build/contracts/ folder.
 Note that Brownie automatically recompiles any changed contracts each time
 a project is loaded. You do not have to manually trigger a recompile."""
 
+# 命令：brownie compile 编译智能合约
+
 
 def main():
     args = docopt(__doc__)
@@ -38,6 +40,7 @@ def main():
     contract_artifact_path = build_path.joinpath("contracts")
     interface_artifact_path = build_path.joinpath("interfaces")
 
+    # 强制重新编译所有合约
     if args["--all"]:
         shutil.rmtree(contract_artifact_path, ignore_errors=True)
         shutil.rmtree(interface_artifact_path, ignore_errors=True)
@@ -47,8 +50,10 @@ def main():
             if path.exists():
                 path.unlink()
 
+    # 加载项目
     proj = project.load()
 
+    # 显示编译后的bytecode大小
     if args["--size"]:
         print("============ Deployment Bytecode Sizes ============")
         codesize = []

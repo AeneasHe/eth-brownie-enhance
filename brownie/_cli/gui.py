@@ -26,6 +26,8 @@ Opens the brownie GUI. Basic functionality is as follows:
    you have already run brownie coverage on your project. The coverage results
    are shown via different colors of text highlight."""
 
+# gui 入口
+
 
 def main():
     docopt(__doc__)

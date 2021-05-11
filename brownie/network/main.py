@@ -39,6 +39,7 @@ def connect(network: str = None, launch_rpc: bool = True) -> None:
 
         web3.connect(host, active.get("timeout", 30))
         if CONFIG.network_type == "development" and launch_rpc and not rpc.is_active():
+            # 如果是测试环境，需要启动rpc,而且rpc是激活的
             if is_connected():
                 if web3.eth.block_number != 0:
                     warnings.warn(

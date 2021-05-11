@@ -49,6 +49,7 @@ class Accounts(metaclass=_Singleton):
 
     def __init__(self) -> None:
         self.default = None
+        # 保存的本地账户
         self._accounts: List = []
 
         # prevent sensitive info from being stored in readline history
@@ -110,6 +111,8 @@ class Accounts(metaclass=_Singleton):
     def __len__(self) -> int:
         return len(self._accounts)
 
+    # 当没有私钥时，创建新助记词和新账户
+    # 当有私钥时,创建本地账户
     def add(self, private_key: Union[int, bytes, str] = None) -> "LocalAccount":
         """
         Create a new ``LocalAccount`` instance and appends it to the container.
@@ -126,15 +129,25 @@ class Accounts(metaclass=_Singleton):
         LocalAccount
         """
         if private_key is None:
+            # 如果没有私钥，创建新账户
+            print("account add 1")
             w3account, mnemonic = eth_account.Account.create_with_mnemonic()
             print(f"mnemonic: '{color('bright cyan')}{mnemonic}{color}'")
         else:
+            # 如果有私钥，恢复账户
+            print("account add 2")
             w3account = web3.eth.account.from_key(private_key)
 
         if w3account.address in self._accounts:
+            # 如果账户已经在_accounts容器中，则直接返回容器中的该账户
+            print("account add 3")
             return self.at(w3account.address)
 
+        print("add LocalAccount")
+        # 本地账户
         account = LocalAccount(w3account.address, w3account, w3account.key)
+
+        # 将本地账户添加到_accounts表
         self._accounts.append(account)
 
         return account
@@ -172,7 +185,8 @@ class Accounts(metaclass=_Singleton):
             return new_accounts[0]
         return new_accounts
 
-    def load(self, filename: str = None) -> Union[List, "LocalAccount"]:
+    # 加载账户
+    def load(self, filename: str = None, password: str = None) -> Union[List, "LocalAccount"]:
         """
         Load a local account from a keystore file.
 
@@ -185,6 +199,7 @@ class Accounts(metaclass=_Singleton):
         -------
         LocalAccount
         """
+        # 从账户路径下面遍历查找.json文件
         base_accounts_path = _get_data_folder().joinpath("accounts")
         if not filename:
             return [i.stem for i in base_accounts_path.glob("*.json")]
@@ -204,10 +219,13 @@ class Accounts(metaclass=_Singleton):
                 if not json_file.exists():
                     raise FileNotFoundError(f"Cannot find {json_file}")
 
+        # 加载账户文件
         with json_file.open() as fp:
-            priv_key = web3.eth.account.decrypt(
-                json.load(fp), getpass("Enter the password to unlock this account: ")
-            )
+            # 解密文件
+            if not password:
+                password = getpass("Enter the password to unlock this account: ")
+            priv_key = web3.eth.account.decrypt(json.load(fp), password)
+        # 将密钥添加到
         return self.add(priv_key)
 
     def at(self, address: str, force: bool = False) -> "LocalAccount":
@@ -228,16 +246,23 @@ class Accounts(metaclass=_Singleton):
         Account
         """
         address = _resolve_address(address)
+        # 从账户容器中取出目标账户
         acct = next((i for i in self._accounts if i == address), None)
 
+        # 如果账户是空， 且 address在web3 rpc账户中
         if acct is None and (address in web3.eth.accounts or force):
+            # 创建普通账户
             acct = Account(address)
 
+            # 如果是本地网络
             if CONFIG.network_type == "development" and address not in web3.eth.accounts:
+                # 解锁账户
                 rpc.unlock_account(address)
 
+            # 将账户添加到账户容器
             self._accounts.append(acct)
 
+        # 如果账户容器中有该账户，则直接返回账户
         if acct:
             return acct
         raise UnknownAccount(f"No account exists for {address}")
@@ -264,6 +289,7 @@ class Accounts(metaclass=_Singleton):
         self._accounts.clear()
 
 
+# 公共账户，没有私钥
 class PublicKeyAccount:
     """Class for interacting with an Ethereum account where you do not control
     the private key. Can be used to check the balance or nonce, and to send ether to."""
@@ -325,6 +351,7 @@ class PublicKeyAccount:
         return EthAddress(deployment_address)
 
 
+# 有私钥的账户
 class _PrivateKeyAccount(PublicKeyAccount):
 
     """Base class for Account and LocalAccount"""
@@ -405,10 +432,11 @@ class _PrivateKeyAccount(PublicKeyAccount):
                 "If you wish to broadcast, include `allow_revert:True` as a transaction parameter.",
             ) from None
 
+    # 账户部署合约
     def deploy(
         self,
-        contract: Any,
-        *args: Tuple,
+        contract: Any,  # 合约实例
+        *args: Tuple,  # 合约的参数
         amount: int = 0,
         gas_limit: Optional[int] = None,
         gas_buffer: Optional[float] = None,
@@ -443,12 +471,15 @@ class _PrivateKeyAccount(PublicKeyAccount):
         data = contract.deploy.encode_input(*args)
         if silent is None:
             silent = bool(CONFIG.mode == "test" or CONFIG.argv["silent"])
+
+        # 进程锁打开
         with self._lock:
             try:
                 gas_price, gas_strategy, gas_iter = self._gas_price(gas_price)
                 gas_limit = Wei(gas_limit) or self._gas_limit(
                     None, amount, gas_price, gas_buffer, data
                 )
+                # 发送交易，交易的id
                 txid = self._transact(  # type: ignore
                     {
                         "from": self.address,
@@ -468,6 +499,7 @@ class _PrivateKeyAccount(PublicKeyAccount):
                 txid = exc.txid
                 revert_data = (exc.revert_msg, exc.pc, exc.revert_type)
 
+            # 交易的receipt
             receipt = TransactionReceipt(
                 txid,
                 self,
@@ -478,11 +510,13 @@ class _PrivateKeyAccount(PublicKeyAccount):
                 revert_data=revert_data,
             )
 
+        # 等待交易确认
         receipt = self._await_confirmation(receipt, required_confs, gas_strategy, gas_iter)
 
         add_thread = threading.Thread(target=contract._add_from_tx, args=(receipt,), daemon=True)
         add_thread.start()
 
+        # 如果rpc是有效的
         if rpc.is_active():
             undo_thread = threading.Thread(
                 target=Chain()._add_to_undo_buffer,
@@ -506,6 +540,7 @@ class _PrivateKeyAccount(PublicKeyAccount):
             return receipt
 
         add_thread.join()
+        # 读取部署后的合约
         try:
             deployed_contract = contract.at(receipt.contract_address)
             if publish_source:
@@ -695,6 +730,7 @@ class _PrivateKeyAccount(PublicKeyAccount):
                 return receipt
 
 
+# 账户
 class Account(_PrivateKeyAccount):
 
     """Class for interacting with an Ethereum account.
@@ -703,6 +739,7 @@ class Account(_PrivateKeyAccount):
         address: Public address of the account.
         nonce: Current nonce of the account."""
 
+    # 发送交易
     def _transact(self, tx: Dict, allow_revert: bool) -> Any:
         if allow_revert is None:
             allow_revert = bool(CONFIG.network_type == "development")
@@ -711,6 +748,7 @@ class Account(_PrivateKeyAccount):
         return web3.eth.send_transaction(tx)
 
 
+# 本地账户
 class LocalAccount(_PrivateKeyAccount):
 
     """Class for interacting with an Ethereum account.

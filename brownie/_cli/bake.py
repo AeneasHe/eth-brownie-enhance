@@ -20,6 +20,8 @@ point for your own project, or as a part of a tutorial.
 For a complete list of Brownie mixes visit https://www.github.com/brownie-mix
 """
 
+# 命令：brownie bake 根据模版初始化创建新项目
+
 
 def main():
     args = docopt(__doc__)

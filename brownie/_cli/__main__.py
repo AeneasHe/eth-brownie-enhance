@@ -32,6 +32,8 @@ Options:
 Type 'brownie <command> --help' for specific options and more information about
 each command."""
 
+## 控制台的主入口文件
+
 
 def main():
 
@@ -57,10 +59,13 @@ def main():
         sys.exit("Invalid command. Try 'brownie --help' for available commands.")
 
     CONFIG.argv["cli"] = cmd
+
+    # 将 accounts 简化成 a 注入环境
     sys.modules["brownie"].a = network.accounts
     sys.modules["brownie"].__all__.append("a")
 
     try:
+        # 根据 brownie 命令后的子命令，加载不同的模式
         importlib.import_module(f"brownie._cli.{cmd}").main()
     except ProjectNotFound:
         notify("ERROR", "Brownie environment has not been initiated for this folder.")

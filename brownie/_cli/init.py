@@ -25,6 +25,8 @@ scripts/                Scripts for deployment and interaction
 tests/                  Scripts for project testing
 """
 
+# 命令：brownie init 初始化创建新项目
+
 
 def main():
     args = docopt(__doc__)

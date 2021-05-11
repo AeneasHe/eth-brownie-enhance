@@ -78,6 +78,7 @@ class _ProjectBase:
     _sources: Sources
     _build: Build
 
+    # 编译
     def _compile(self, contract_sources: Dict, compiler_config: Dict, silent: bool) -> None:
         compiler_config.setdefault("solc", {})
 
@@ -122,6 +123,7 @@ class _ProjectBase:
                 # only add artifacts from the core project for now
                 self._build._add_contract(data)
 
+    # 创建合约容器
     def _create_containers(self) -> None:
         # create container objects
         self.interface = InterfaceContainer(self)
@@ -154,6 +156,7 @@ class _ProjectBase:
         return self._containers.keys()
 
 
+# 项目对象，管理一个合约开发的项目
 class Project(_ProjectBase):
 
     """
@@ -185,12 +188,16 @@ class Project(_ProjectBase):
         if self._active:
             raise ProjectAlreadyLoaded("Project is already active")
 
+        # 加载智能合约源码
         contract_sources = _load_sources(self._path, self._structure["contracts"], False)
+        # 加载接口
         interface_sources = _load_sources(self._path, self._structure["interfaces"], True)
         self._sources = Sources(contract_sources, interface_sources)
         self._build = Build(self._sources)
 
         contract_list = self._sources.get_contract_list()
+
+        # 遍历部署目录build/contracts下的结果文件
         for path in list(self._build_path.glob("contracts/*.json")):
             try:
                 with path.open() as fp:
@@ -212,6 +219,7 @@ class Project(_ProjectBase):
                 continue
             self._build._add_contract(build_json)
 
+        # 遍历部署目录build/contracts下的结果文件
         interface_hashes = {}
         interface_list = self._sources.get_interface_list()
         for path in list(self._build_path.glob("interfaces/*.json")):
@@ -230,15 +238,19 @@ class Project(_ProjectBase):
             _load_project_compiler_config(self._path), self._envvars
         )
 
+        # 重新编译修改过的合约源文件
         # compile updated sources, update build
         changed = self._get_changed_contracts(interface_hashes)
         self._compile(changed, self._compiler_config, False)
         self._compile_interfaces(interface_hashes)
         self._load_dependency_artifacts()
 
+        # 创建合约容器（初始化时，会自动部署）
         self._create_containers()
+        # 加载部署结果
         self._load_deployments()
 
+        # 将项目加载到明面空间
         # add project to namespaces, apply import blackmagic
         name = self._name
         self.__all__ = list(self._containers) + ["interface"]
@@ -251,12 +263,14 @@ class Project(_ProjectBase):
             sys.modules["brownie.project"].__dict__,
         ]
 
+        # 重置项目
         # register project for revert and reset
         _revert_register(self)
 
         self._active = True
         _loaded_projects.append(self)
 
+    # 获取源码更新的合约
     def _get_changed_contracts(self, compiled_hashes: Dict) -> Dict:
         # get list of changed interfaces and contracts
         new_hashes = self._sources.get_interface_hashes()
@@ -276,6 +290,7 @@ class Project(_ProjectBase):
         changed_set: Set = set(self._sources.get_source_path(i) for i in contracts)
         return {i: self._sources.get(i) for i in changed_set}
 
+    # 比较编译结果文件
     def _compare_build_json(self, contract_name: str) -> bool:
         config = self._compiler_config
         # confirm that this contract was previously compiled
@@ -301,6 +316,7 @@ class Project(_ProjectBase):
                 return True
         return False
 
+    # 编译接口
     def _compile_interfaces(self, compiled_hashes: Dict) -> None:
         new_hashes = self._sources.get_interface_hashes()
         changed_paths = [
@@ -325,6 +341,7 @@ class Project(_ProjectBase):
                 json.dump(abi, fp, sort_keys=True, indent=2, default=sorted)
             self._build._add_interface(abi)
 
+    # 加载合约依赖文件
     def _load_dependency_artifacts(self) -> None:
         dep_build_path = self._build_path.joinpath("contracts/dependencies/")
         for path in list(dep_build_path.glob("**/*.json")):
@@ -336,6 +353,7 @@ class Project(_ProjectBase):
             else:
                 path.unlink()
 
+    # 加载部署结果
     def _load_deployments(self) -> None:
         if CONFIG.network_type != "live" and not CONFIG.settings["dev_deployment_artifacts"]:
             return
@@ -372,6 +390,7 @@ class Project(_ProjectBase):
 
         self._save_deployment_map(deployment_map)
 
+    # 加载部署结果图
     def _load_deployment_map(self) -> Dict:
         deployment_map: Dict = {}
         map_path = self._build_path.joinpath("deployments/map.json")
@@ -638,6 +657,7 @@ def from_ethpm(uri: str) -> "TempProject":
     return project
 
 
+# 编译智能合约的方法
 def compile_source(
     source: str,
     solc_version: Optional[str] = None,

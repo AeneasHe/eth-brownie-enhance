@@ -56,6 +56,8 @@ DEV_CMD_SETTINGS = (
     "chain_id",
 )
 
+#  命令：brownie networks 管理网络连接入口
+
 
 def main():
     args = docopt(__doc__)

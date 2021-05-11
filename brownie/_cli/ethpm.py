@@ -32,6 +32,8 @@ and projects. See https://eth-brownie.readthedocs.io/en/stable/ethpm.html for mo
 information on how to use it within Brownie.
 """
 
+# 命令： brownie ethpm 去中心化包管理
+
 
 def main():
     args = docopt(__doc__)

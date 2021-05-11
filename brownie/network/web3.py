@@ -50,30 +50,41 @@ class Web3(_Web3):
         self.provider = None
 
         uri = _expand_environment_vars(uri)
+
+        print("uri:", uri)
+
         try:
             if Path(uri).exists():
                 self.provider = IPCProvider(uri, timeout=timeout)
         except OSError:
+            print("--->1")
             pass
 
         if self.provider is None:
             if uri.startswith("ws"):
                 self.provider = WebsocketProvider(uri, {"close_timeout": timeout})
             elif uri.startswith("http"):
-
+                print("set http provider")
                 self.provider = HTTPProvider(uri, {"timeout": timeout})
             else:
                 raise ValueError(
                     "Unknown URI - must be a path to an IPC socket, a websocket "
                     "beginning with 'ws' or a URL beginning with 'http'"
                 )
+        print("--->2")
 
         try:
+            print("--->3")
             if self.isConnected():
+                print("--->4")
+
                 self.reset_middlewares()
-        except Exception:
+        except Exception as e:
+            print("--->5")
+            print(e)
             # checking an invalid connection sometimes raises on windows systems
             pass
+        return self
 
     def reset_middlewares(self) -> None:
         """
@@ -110,7 +121,9 @@ class Web3(_Web3):
             self._remove_middlewares()
 
     def isConnected(self) -> bool:
+        print("===>1")
         if not self.provider:
+            print("===>2")
             return False
         return super().isConnected()
 
@@ -207,7 +220,7 @@ def _resolve_address(domain: str) -> str:
 
 
 web3 = Web3()
-web3.eth.set_gas_price_strategy(rpc_gas_price_strategy)
+# web3.eth.set_gas_price_strategy(rpc_gas_price_strategy)
 
 try:
     with _get_path().open() as fp:

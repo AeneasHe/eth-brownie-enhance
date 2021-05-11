@@ -70,7 +70,7 @@ def launch(cmd: str, **kwargs: Dict) -> None:
     print(f"\nLaunching '{' '.join(cmd_list)}'...")
     out = DEVNULL if sys.platform == "win32" else PIPE
 
-    return psutil.Popen(cmd_list, stdin=DEVNULL, stdout=out, stderr=out)
+    return psutil.Popen(cmd_list, stdin=DEVNULL, stdout=out, stderr=out, shell=True)
 
 
 def on_connection() -> None:

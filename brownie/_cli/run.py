@@ -29,6 +29,8 @@ Options:
 Use run to execute scripts for contract deployment, to automate common
 interactions, or for gas profiling."""
 
+#  brownie run 执行脚本文件
+
 
 def main():
     args = docopt(__doc__)
@@ -64,12 +66,18 @@ def main():
 
     try:
         if args["--interactive"]:
+            # 脚本执行完成以后，打开控制台
+
             # filter internal objects from the namespace prior to opening the console
             globals_dict = {k: v for k, v in frame.f_globals.items() if not k.startswith("__")}
             extra_locals = {"_": return_value, **globals_dict, **frame.f_locals}
+
+            # 启动控制台
             shell = Console(active_project, extra_locals)
             shell.interact(banner="\nInteractive mode enabled. Use quit() to close.", exitmsg="")
+
     finally:
+        # 退出前，如果设置了显示gas消耗，打印gas消耗报告
         # the console terminates from a SystemExit - make sure we still deliver the final gas report
         if CONFIG.argv["gas"]:
             print("\n======= Gas profile =======")

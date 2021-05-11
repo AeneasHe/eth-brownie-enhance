@@ -39,6 +39,8 @@ Connects to the network and opens the brownie console.
 
 _parser_cache: dict = {}
 
+#  命令：brownie console 启动控制台
+
 
 def main():
     args = docopt(__doc__)
