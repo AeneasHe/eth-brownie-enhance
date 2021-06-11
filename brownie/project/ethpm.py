@@ -149,6 +149,7 @@ def process_manifest(manifest: Dict, uri: Optional[str] = None) -> Dict:
         if solc_sources:
             version = compiler.find_best_solc_version(solc_sources, install_needed=True)
 
+        print("contract compile-0.3\n")
         build_json = compiler.compile_and_format(
             manifest["sources"],
             solc_version=version,

@@ -14,7 +14,7 @@ from solcast.nodes import NodeBase, is_inside_offset
 from brownie._config import EVM_EQUIVALENTS
 from brownie.exceptions import CompilerError, IncompatibleSolcVersion
 from brownie.project.compiler.utils import _get_alias, expand_source_map
-
+import time
 from . import sources
 
 solcx_logger = logging.getLogger("solcx")
@@ -75,7 +75,14 @@ def compile_from_input_json(
             print(f"  EVM Version: {input_json['settings']['evmVersion'].capitalize()}")
 
     try:
-        return solcx.compile_standard(input_json, allow_paths=allow_paths)
+        t0=time.time()
+        re= solcx.compile_standard(input_json, allow_paths=allow_paths)
+        t1=time.time()
+        t=int((t1-t0)*1000)
+
+        print(f'=============> solidity compile time:{t}ms\n')
+        return re
+
     except solcx.exceptions.SolcError as e:
         raise CompilerError(e, "solc")
 

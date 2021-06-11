@@ -6,9 +6,13 @@ from hashlib import sha1
 from pathlib import Path
 from typing import Dict, Optional
 
+
 import solcast
 from eth_utils import remove_0x_prefix
 from semantic_version import Version
+
+from brownie import project
+from brownie._config import _load_project_structure_config
 
 from brownie._config import _get_data_folder
 from brownie.exceptions import UnsupportedLanguage
@@ -24,6 +28,8 @@ from brownie.project.compiler.vyper import find_vyper_versions, set_vyper_versio
 from brownie.utils import notify
 
 from . import solidity, vyper
+import time
+import pickle
 
 STANDARD_JSON: Dict = {
     "language": None,
@@ -46,6 +52,29 @@ EVM_SOLC_VERSIONS = [
 ]
 
 
+def get_build_path():
+    project_path = project.check_for_project(".")
+    if project_path is None:
+        raise Exception("ProjectNotFound")
+    project_structure=_load_project_structure_config(project_path)
+    
+    #print("project_structure:",project_structure)
+
+    build_path = project_path.joinpath(project_structure["build"])
+    return build_path
+
+
+def get_cache_path():
+    project_path = project.check_for_project(".")
+    if project_path is None:
+        raise Exception("ProjectNotFound")
+    project_structure=_load_project_structure_config(project_path)
+    
+    #print("project_structure:",project_structure)
+
+    cache_path = project_path.joinpath(project_structure["cache"])
+    return cache_path
+
 def compile_and_format(
     contract_sources: Dict[str, str],
     solc_version: Optional[str] = None,
@@ -58,6 +87,7 @@ def compile_and_format(
     interface_sources: Optional[Dict[str, str]] = None,
     remappings: Optional[list] = None,
     optimizer: Optional[Dict] = None,
+    use_cache:Optional[bool] = False
 ) -> Dict:
     """Compiles contracts and returns build data.
 
@@ -76,6 +106,9 @@ def compile_and_format(
     Returns:
         build data dict
     """
+
+    #print("contract_sources:",contract_sources)
+
     if not contract_sources:
         return {}
     if interface_sources is None:
@@ -89,6 +122,7 @@ def compile_and_format(
     build_json: Dict = {}
     compiler_targets = {}
 
+    # 将vyper合约解析到compiler_targets
     vyper_sources = {k: v for k, v in contract_sources.items() if Path(k).suffix == ".vy"}
     if vyper_sources:
         # TODO add `vyper_version` input arg to manually specify, support in config file
@@ -98,6 +132,8 @@ def compile_and_format(
             )
         else:
             compiler_targets[vyper_version] = list(vyper_sources)
+
+    # 将solc合约解析到compiler_targets
     solc_sources = {k: v for k, v in contract_sources.items() if Path(k).suffix == ".sol"}
     if solc_sources:
         if solc_version is None:
@@ -110,7 +146,9 @@ def compile_and_format(
         if optimizer is None:
             optimizer = {"enabled": optimize, "runs": runs if optimize else 0}
 
+    # 遍历compiler_targets
     for version, path_list in compiler_targets.items():
+
         compiler_data: Dict = {}
         if path_list[0].endswith(".vy"):
             set_vyper_version(version)
@@ -127,8 +165,10 @@ def compile_and_format(
                 if Path(k).suffix == ".sol" and Version(version) in sources.get_pragma_spec(v, k)
             }
 
+        # 取出待编译的合约
         to_compile = {k: v for k, v in contract_sources.items() if k in path_list}
 
+        # 生成编译前的输入文件
         input_json = generate_input_json(
             to_compile,
             evm_version=evm_version,
@@ -137,13 +177,50 @@ def compile_and_format(
             remappings=remappings,
             optimizer=optimizer,
         )
+        # print("data folder",_get_data_folder())
+        #print("path_list",path_list)
 
-        output_json = compile_from_input_json(input_json, silent, allow_paths)
+        print("contract compile-2\n")
+
+        # 缓存数据文件
+        build_path=get_build_path()
+        input_filename=Path(build_path).joinpath("input.json")
+        output_filename=Path(build_path).joinpath("output.json")
+
+        # 编译合约得到输出文件
+        if use_cache:
+            print("=============> 从缓存加载编译的合约\n")
+            # 直接从缓存加载
+            # f= output_filename.open('rb')
+            # output_json = pickle.load(f)
+            f= output_filename.open('r')
+            output_json = json.load(f)
+            f.close()
+        else:
+            print("=============> 重新编译所有合约\n")
+            # 重新编译
+            output_json = compile_from_input_json(input_json, silent, allow_paths)
+
+            # 将编译数据缓存保存起来
+            # f= input_filename.open('wb')
+            # pickle.dump(input_json,f)
+            # f.close()
+            # f= output_filename.open('wb') 
+            # pickle.dump(output_json,f)
+            # f.close()
+
+            f= input_filename.open('w')
+            json.dump(input_json,f)
+            f.close()
+            f= output_filename.open('w') 
+            json.dump(output_json,f)
+            f.close()
+        # 将输出文件output_json解析成保存文件build_json
         build_json.update(generate_build_json(input_json, output_json, compiler_data, silent))
 
     return build_json
 
-
+# 生成合约编译器的输入文件
 def generate_input_json(
     contract_sources: Dict[str, str],
     optimize: bool = True,
@@ -228,7 +305,7 @@ def _get_allow_paths(allow_paths: Optional[str], remappings: list) -> str:
     path_list = path_list + [data_path] + remapping_paths
     return ",".join(path_list)
 
-
+# 从输入json编译出输出json，编译的主要过程
 def compile_from_input_json(
     input_json: Dict, silent: bool = True, allow_paths: Optional[str] = None
 ) -> Dict:
@@ -245,23 +322,28 @@ def compile_from_input_json(
     """
 
     if input_json["language"] == "Vyper":
-        return vyper.compile_from_input_json(input_json, silent, allow_paths)
+        res=vyper.compile_from_input_json(input_json, silent, allow_paths)
+        print("contract compile-3 result:\n")
+        return res 
 
     if input_json["language"] == "Solidity":
         allow_paths = _get_allow_paths(allow_paths, input_json["settings"]["remappings"])
-        return solidity.compile_from_input_json(input_json, silent, allow_paths)
+        res= solidity.compile_from_input_json(input_json, silent, allow_paths)
+        print("contract compile finish\n")
+        return res 
 
     raise UnsupportedLanguage(f"{input_json['language']}")
 
 
+# 根据编译器编译结果，将输出进行处理
 def generate_build_json(
     input_json: Dict, output_json: Dict, compiler_data: Optional[Dict] = None, silent: bool = True
 ) -> Dict:
     """Formats standard compiler output to the brownie build json.
 
     Args:
-        input_json: solc input json used to compile
-        output_json: output json returned by compiler
+        input_json: solc input json used to compile，编译器输入的json
+        output_json: output json returned by compiler，编译器输出的json，即compile_from_input_json方法返回值
         compiler_data: additonal data to include under 'compiler' in build json
         silent: verbose reporting
 
@@ -276,24 +358,34 @@ def generate_build_json(
     if compiler_data is None:
         compiler_data = {}
     compiler_data["evm_version"] = input_json["settings"]["evmVersion"]
+
+    # 存放输出结果
     build_json: Dict = {}
 
     if input_json["language"] == "Solidity":
         compiler_data["optimizer"] = input_json["settings"]["optimizer"]
         source_nodes, statement_nodes, branch_nodes = solidity._get_nodes(output_json)
 
+    # 遍历合约进行处理
+    _t0=time.time()
     for path_str, contract_name in [
         (k, x) for k, v in output_json["contracts"].items() for x in v.keys()
-    ]:
+    ]:  
+        t0=time.time()
+        # 合约名称，即类名 
         contract_alias = contract_name
 
+        
         if path_str in input_json["sources"]:
+            # 如果路径已经在输入json中，直接从json里读源码
             source = input_json["sources"][path_str]["content"]
         else:
+            # 否则打开源文件读取数据
             with Path(path_str).open() as fp:
                 source = fp.read()
             contract_alias = _get_alias(contract_name, path_str)
-
+        
+        # 打印当前正则编译的合约名称
         if not silent:
             print(f" - {contract_alias}")
 
@@ -303,10 +395,12 @@ def generate_build_json(
             output_json["contracts"][path_str][contract_name].get("userdoc", {}),
         )
         output_evm = output_json["contracts"][path_str][contract_name]["evm"]
+
         if contract_alias in build_json and not output_evm["deployedBytecode"]["object"]:
             continue
 
         if input_json["language"] == "Solidity":
+            # solidity合约
             contract_node = next(
                 i[contract_name] for i in source_nodes if i.absolutePath == path_str
             )
@@ -319,6 +413,7 @@ def generate_build_json(
             )
 
         else:
+            # vyper合约
             if contract_name == "<stdin>":
                 contract_name = contract_alias = "Vyper"
             build_json[contract_alias] = vyper._get_unique_build_json(
@@ -352,10 +447,15 @@ def generate_build_json(
                 "WARNING",
                 f"deployed size of {contract_name} is {size} bytes, exceeds EIP-170 limit of 24577",
             )
+        t1=time.time()
+        t=int((t1-t0)*1000)
+        #print(f'cost time ms:{t}')
 
     if not silent:
         print("")
-
+    _t1=time.time()
+    t=int((_t1-_t0)*1000)
+    print(f'=============> build_json cost time :{t} ms')
     return build_json
 
 
@@ -415,6 +515,8 @@ def get_abi(
         input_json["settings"]["outputSelection"]["*"] = {"*": ["abi"]}
         try:
             output_json = compile_from_input_json(input_json, silent, allow_paths)
+            print("contract compile-5 result:\n")
+
         except Exception:
             # vyper interfaces do not convert to ABIs
             # https://github.com/vyperlang/vyper/issues/1944
@@ -444,6 +546,8 @@ def get_abi(
         input_json["settings"]["outputSelection"]["*"] = {"*": ["abi"], "": ["ast"]}
 
         output_json = compile_from_input_json(input_json, silent, allow_paths)
+        print("contract compile-6 result:\n")
+
         source_nodes = solcast.from_standard_output(output_json)
         abi_json = {k: v for k, v in output_json["contracts"].items() if k in path_list}
 

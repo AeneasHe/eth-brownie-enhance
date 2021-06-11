@@ -1062,6 +1062,7 @@ class Contract(_DeployedContractBase):
         _add_deployment(self)
         return self
 
+    # 从资源浏览器
     @classmethod
     def from_explorer(
         cls,
@@ -1086,8 +1087,12 @@ class Contract(_DeployedContractBase):
             Contract owner. If set, transactions without a `from` field will be
             performed using this account.
         """
+        # 合约地址
         address = _resolve_address(address)
+        
+        # 从区块链浏览器，根据合约地址取出合约数据
         data = _fetch_from_explorer(address, "getsourcecode", silent)
+
         is_verified = bool(data["result"][0].get("SourceCode"))
 
         if is_verified:
@@ -1189,8 +1194,11 @@ class Contract(_DeployedContractBase):
             input_json.update(
                 compiler.generate_input_json(sources, optimizer=optimizer, evm_version=evm_version)
             )
+            print("contract compile start ...............")
             output_json = compiler.compile_from_input_json(input_json)
+            print("contract compile-1 result:\n")
             build_json = compiler.generate_build_json(input_json, output_json)
+
         else:
             if source_str.startswith("{"):
                 # source was submitted as multiple files
@@ -1202,7 +1210,8 @@ class Contract(_DeployedContractBase):
                 else:
                     path_str = f"{name}-flattened.sol"
                 sources = {path_str: source_str}
-
+            
+            print("contract compile-0.2\n")
             build_json = compiler.compile_and_format(
                 sources,
                 solc_version=str(version),

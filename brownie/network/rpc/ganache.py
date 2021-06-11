@@ -67,7 +67,7 @@ def launch(cmd: str, **kwargs: Dict) -> None:
                     f'"{key}" with value "{value}".',
                     InvalidArgumentWarning,
                 )
-    print(f"\nLaunching '{' '.join(cmd_list)}'...")
+    print(f"\nLaunching 启动节点命令：'{' '.join(cmd_list)}'...")
     out = DEVNULL if sys.platform == "win32" else PIPE
 
     return psutil.Popen(cmd_list, stdin=DEVNULL, stdout=out, stderr=out, shell=True)

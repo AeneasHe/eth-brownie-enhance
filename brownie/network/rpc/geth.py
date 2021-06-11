@@ -12,7 +12,7 @@ from brownie.network.web3 import web3
 
 
 def launch(cmd: str, **kwargs: Dict) -> None:
-    print(f"\nLaunching '{cmd}'...")
+    print(f"\nLaunching 启动节点命令'{cmd}'...")
     out = DEVNULL if sys.platform == "win32" else PIPE
 
     return psutil.Popen([cmd], stdin=DEVNULL, stdout=out, stderr=out)

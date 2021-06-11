@@ -42,10 +42,11 @@ def connect(network: str = None, launch_rpc: bool = True) -> None:
             # 如果是测试环境，需要启动rpc,而且rpc是激活的
             if is_connected():
                 if web3.eth.block_number != 0:
-                    warnings.warn(
-                        f"Development network has a block height of {web3.eth.block_number}",
-                        BrownieEnvironmentWarning,
-                    )
+                    # warnings.warn(
+                    #     f"Development network has a block height of {web3.eth.block_number}",
+                    #     BrownieEnvironmentWarning,
+                    # )
+                    print(f"Development network has a block height of {web3.eth.block_number}")
                 rpc.attach(host)
             else:
                 rpc.launch(active["cmd"], **active["cmd_settings"])

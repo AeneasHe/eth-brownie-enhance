@@ -9,7 +9,7 @@ from hexbytes import HexBytes
 from .datatypes import EthAddress, Fixed, HexString, Wei
 from .utils import get_int_bounds
 
-
+# 转化为uint256
 def to_uint(value: Any, type_str: str = "uint256") -> Wei:
     """Convert a value to an unsigned integer"""
     wei: Wei = Wei(value)
@@ -18,7 +18,7 @@ def to_uint(value: Any, type_str: str = "uint256") -> Wei:
         raise OverflowError(f"{value} is outside allowable range for {type_str}")
     return wei
 
-
+# 转化为整数
 def to_int(value: Any, type_str: str = "int256") -> Wei:
     """Convert a value to a signed integer"""
     wei = Wei(value)
@@ -27,7 +27,7 @@ def to_int(value: Any, type_str: str = "int256") -> Wei:
         raise OverflowError(f"{value} is outside allowable range for {type_str}")
     return wei
 
-
+# 转化为十进制
 def to_decimal(value: Any) -> Fixed:
     """Convert a value to a fixed point decimal"""
     d: Fixed = Fixed(value)
@@ -37,17 +37,17 @@ def to_decimal(value: Any) -> Fixed:
         raise ValueError("Maximum of 10 decimal points allowed")
     return d
 
-
+# 转化为地址
 def to_address(value: str) -> str:
     """Convert a value to an address"""
     return str(EthAddress(value))
 
-
+# 转化为bytes32
 def to_bytes(value: Any, type_str: str = "bytes32") -> bytes:
     """Convert a value to bytes"""
     return bytes(HexString(value, type_str))
 
-
+# 转化为bool
 def to_bool(value: Any) -> bool:
     """Convert a value to a boolean"""
     if not isinstance(value, (int, float, bool, bytes, str)):
@@ -60,7 +60,7 @@ def to_bool(value: Any) -> bool:
         raise ValueError(f"Cannot convert {type(value).__name__} '{value}' to bool")
     return bool(value)
 
-
+# 转化为字符串
 def to_string(value: Any) -> str:
     """Convert a value to a string"""
     if isinstance(value, bytes):

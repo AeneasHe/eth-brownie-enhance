@@ -51,36 +51,36 @@ class Web3(_Web3):
 
         uri = _expand_environment_vars(uri)
 
-        print("uri:", uri)
+        print(f"\nconnect provider uri:{uri}\n")
 
         try:
             if Path(uri).exists():
                 self.provider = IPCProvider(uri, timeout=timeout)
         except OSError:
-            print("--->1")
+            #print("--->1")
             pass
 
         if self.provider is None:
             if uri.startswith("ws"):
                 self.provider = WebsocketProvider(uri, {"close_timeout": timeout})
             elif uri.startswith("http"):
-                print("set http provider")
+                #print("set http provider")
                 self.provider = HTTPProvider(uri, {"timeout": timeout})
             else:
                 raise ValueError(
                     "Unknown URI - must be a path to an IPC socket, a websocket "
                     "beginning with 'ws' or a URL beginning with 'http'"
                 )
-        print("--->2")
+        #print("--->2")
 
         try:
-            print("--->3")
+            #print("--->3")
             if self.isConnected():
-                print("--->4")
+                #print("--->4")
 
                 self.reset_middlewares()
         except Exception as e:
-            print("--->5")
+            #print("--->5")
             print(e)
             # checking an invalid connection sometimes raises on windows systems
             pass
@@ -121,9 +121,9 @@ class Web3(_Web3):
             self._remove_middlewares()
 
     def isConnected(self) -> bool:
-        print("===>1")
+        #print("===>1")
         if not self.provider:
-            print("===>2")
+            #print("===>2")
             return False
         return super().isConnected()
 

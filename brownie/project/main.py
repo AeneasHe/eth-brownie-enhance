@@ -81,7 +81,13 @@ class _ProjectBase:
     # 编译
     def _compile(self, contract_sources: Dict, compiler_config: Dict, silent: bool) -> None:
         compiler_config.setdefault("solc", {})
+        
+        print(f"compiler_config:{compiler_config}\n")
 
+        # if compiler_config['solc']['skip_compile']:
+        #     print("skip =======>")
+        #     pass
+        
         allow_paths = None
         cwd = os.getcwd()
         if self._path is not None:
@@ -90,6 +96,8 @@ class _ProjectBase:
             os.chdir(self._path)
 
         try:
+            print("main task :contract compile-0.1\n")
+            # 编译合约
             build_json = compiler.compile_and_format(
                 contract_sources,
                 solc_version=compiler_config["solc"].get("version", None),
@@ -101,12 +109,17 @@ class _ProjectBase:
                 allow_paths=allow_paths,
                 remappings=compiler_config["solc"].get("remappings", []),
                 optimizer=compiler_config["solc"].get("optimizer", None),
+                use_cache=compiler_config["solc"].get("use_cache", False),
             )
         finally:
             os.chdir(cwd)
 
+        print("====>CONFIG",CONFIG)
+
         for alias, data in build_json.items():
+            # 保存编译后的合约
             if self._build_path is not None and not data["sourcePath"].startswith("interface"):
+                # 创建目录
                 # interfaces should generate artifact in /build/interfaces/ not /build/contracts/
                 if alias == data["contractName"]:
                     # if the alias == contract name, this is a part of the core project
@@ -116,9 +129,12 @@ class _ProjectBase:
                     path = self._build_path.joinpath(f"contracts/dependencies/{alias}.json")
                     for parent in list(path.parents)[::-1]:
                         parent.mkdir(exist_ok=True)
+
+                # 将编译后的abi文件保存在目录中
                 with path.open("w") as fp:
                     json.dump(data, fp, sort_keys=True, indent=2, default=sorted)
 
+            # 将合约对象注入到环境中
             if alias == data["contractName"]:
                 # only add artifacts from the core project for now
                 self._build._add_contract(data)

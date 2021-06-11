@@ -24,7 +24,7 @@ UNITS = {
 
 WeiInputTypes = TypeVar("WeiInputTypes", str, float, int, None)
 
-
+# 1.Wei单位转换
 class Wei(int):
 
     """Integer subclass that converts a value to wei and allows comparison against
@@ -118,7 +118,7 @@ def _return_int(original: Any, value: Any) -> int:
     except ValueError:
         raise TypeError(f"Cannot convert {type(original).__name__} '{original}' to wei.")
 
-
+# 2.定长十进制数据
 class Fixed(Decimal):
 
     """
@@ -188,7 +188,7 @@ def _to_fixed(value: Any) -> Decimal:
     except Exception:
         raise TypeError(f"Cannot convert {type(value).__name__} '{value}' to decimal.")
 
-
+# 3.EtheAddress 以太坊地址
 class EthAddress(str):
 
     """String subclass that raises TypeError when compared to a non-address."""
@@ -220,7 +220,7 @@ def _address_compare(a: Any, b: Any) -> bool:
         raise TypeError(f"Invalid type for comparison: '{b}' is not a valid address")
     return a.lower() == b.lower()
 
-
+# 4.HexString 16进制字符
 class HexString(bytes):
 
     """Bytes subclass for hexstring comparisons. Raises TypeError if compared to
@@ -281,7 +281,7 @@ def _to_hex(value: Any) -> str:
             return eth_utils.add_0x_prefix(value)  # type: ignore
     raise ValueError(f"Cannot convert {type(value).__name__} '{value}' to a hex string")
 
-
+# 5.返回数据
 class ReturnValue(tuple):
     """Tuple subclass with dict-like functionality, used for iterable return values."""
 
