@@ -56,9 +56,9 @@ def get_build_path():
     project_path = project.check_for_project(".")
     if project_path is None:
         raise Exception("ProjectNotFound")
-    project_structure=_load_project_structure_config(project_path)
-    
-    #print("project_structure:",project_structure)
+    project_structure = _load_project_structure_config(project_path)
+
+    # print("project_structure:",project_structure)
 
     build_path = project_path.joinpath(project_structure["build"])
     return build_path
@@ -68,12 +68,13 @@ def get_cache_path():
     project_path = project.check_for_project(".")
     if project_path is None:
         raise Exception("ProjectNotFound")
-    project_structure=_load_project_structure_config(project_path)
-    
-    #print("project_structure:",project_structure)
+    project_structure = _load_project_structure_config(project_path)
+
+    # print("project_structure:",project_structure)
 
     cache_path = project_path.joinpath(project_structure["cache"])
     return cache_path
+
 
 def compile_and_format(
     contract_sources: Dict[str, str],
@@ -87,7 +88,7 @@ def compile_and_format(
     interface_sources: Optional[Dict[str, str]] = None,
     remappings: Optional[list] = None,
     optimizer: Optional[Dict] = None,
-    use_cache:Optional[bool] = False
+    use_cache: Optional[bool] = False,
 ) -> Dict:
     """Compiles contracts and returns build data.
 
@@ -107,7 +108,7 @@ def compile_and_format(
         build data dict
     """
 
-    #print("contract_sources:",contract_sources)
+    # print("contract_sources:",contract_sources)
 
     if not contract_sources:
         return {}
@@ -178,25 +179,28 @@ def compile_and_format(
             optimizer=optimizer,
         )
         # print("data folder",_get_data_folder())
-        #print("path_list",path_list)
+        # print("path_list",path_list)
 
         print("contract compile-2\n")
 
         # 缓存数据文件
-        build_path=get_build_path()
-        input_filename=Path(build_path).joinpath("input.json")
-        output_filename=Path(build_path).joinpath("output.json")
+        build_path = get_build_path()
+        input_filename = Path(build_path).joinpath("input.json")
+        output_filename = Path(build_path).joinpath("output.json")
 
         # 编译合约得到输出文件
-        if use_cache:
+        if use_cache and output_filename.exists():
             print("=============> 从缓存加载编译的合约\n")
             # 直接从缓存加载
             # f= output_filename.open('rb')
             # output_json = pickle.load(f)
-            f= output_filename.open('r')
+            f = output_filename.open("r")
             output_json = json.load(f)
             f.close()
         else:
+            if use_cache:
+                print("=============> 缓存不存在\n")
+
             print("=============> 重新编译所有合约\n")
             # 重新编译
             output_json = compile_from_input_json(input_json, silent, allow_paths)
@@ -205,20 +209,21 @@ def compile_and_format(
             # f= input_filename.open('wb')
             # pickle.dump(input_json,f)
             # f.close()
-            # f= output_filename.open('wb') 
+            # f= output_filename.open('wb')
             # pickle.dump(output_json,f)
             # f.close()
 
-            f= input_filename.open('w')
-            json.dump(input_json,f)
+            f = input_filename.open("w")
+            json.dump(input_json, f)
             f.close()
-            f= output_filename.open('w') 
-            json.dump(output_json,f)
+            f = output_filename.open("w")
+            json.dump(output_json, f)
             f.close()
         # 将输出文件output_json解析成保存文件build_json
         build_json.update(generate_build_json(input_json, output_json, compiler_data, silent))
 
     return build_json
+
 
 # 生成合约编译器的输入文件
 def generate_input_json(
@@ -305,6 +310,7 @@ def _get_allow_paths(allow_paths: Optional[str], remappings: list) -> str:
     path_list = path_list + [data_path] + remapping_paths
     return ",".join(path_list)
 
+
 # 从输入json编译出输出json，编译的主要过程
 def compile_from_input_json(
     input_json: Dict, silent: bool = True, allow_paths: Optional[str] = None
@@ -322,15 +328,15 @@ def compile_from_input_json(
     """
 
     if input_json["language"] == "Vyper":
-        res=vyper.compile_from_input_json(input_json, silent, allow_paths)
+        res = vyper.compile_from_input_json(input_json, silent, allow_paths)
         print("contract compile-3 result:\n")
-        return res 
+        return res
 
     if input_json["language"] == "Solidity":
         allow_paths = _get_allow_paths(allow_paths, input_json["settings"]["remappings"])
-        res= solidity.compile_from_input_json(input_json, silent, allow_paths)
+        res = solidity.compile_from_input_json(input_json, silent, allow_paths)
         print("contract compile finish\n")
-        return res 
+        return res
 
     raise UnsupportedLanguage(f"{input_json['language']}")
 
@@ -367,15 +373,14 @@ def generate_build_json(
         source_nodes, statement_nodes, branch_nodes = solidity._get_nodes(output_json)
 
     # 遍历合约进行处理
-    _t0=time.time()
+    _t0 = time.time()
     for path_str, contract_name in [
         (k, x) for k, v in output_json["contracts"].items() for x in v.keys()
-    ]:  
-        t0=time.time()
-        # 合约名称，即类名 
+    ]:
+        t0 = time.time()
+        # 合约名称，即类名
         contract_alias = contract_name
 
-        
         if path_str in input_json["sources"]:
             # 如果路径已经在输入json中，直接从json里读源码
             source = input_json["sources"][path_str]["content"]
@@ -384,7 +389,7 @@ def generate_build_json(
             with Path(path_str).open() as fp:
                 source = fp.read()
             contract_alias = _get_alias(contract_name, path_str)
-        
+
         # 打印当前正则编译的合约名称
         if not silent:
             print(f" - {contract_alias}")
@@ -447,15 +452,15 @@ def generate_build_json(
                 "WARNING",
                 f"deployed size of {contract_name} is {size} bytes, exceeds EIP-170 limit of 24577",
             )
-        t1=time.time()
-        t=int((t1-t0)*1000)
-        #print(f'cost time ms:{t}')
+        t1 = time.time()
+        t = int((t1 - t0) * 1000)
+        # print(f'cost time ms:{t}')
 
     if not silent:
         print("")
-    _t1=time.time()
-    t=int((_t1-_t0)*1000)
-    print(f'=============> build_json cost time :{t} ms')
+    _t1 = time.time()
+    t = int((_t1 - _t0) * 1000)
+    print(f"=============> build_json cost time :{t} ms")
     return build_json
 
 
