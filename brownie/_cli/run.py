@@ -72,7 +72,7 @@ def main():
             globals_dict = {k: v for k, v in frame.f_globals.items() if not k.startswith("__")}
             extra_locals = {"_": return_value, **globals_dict, **frame.f_locals}
 
-            # 启动控制台
+            # 启动控制台, Console是brownie写的控制台类
             shell = Console(active_project, extra_locals)
             shell.interact(banner="\nInteractive mode enabled. Use quit() to close.", exitmsg="")
 
