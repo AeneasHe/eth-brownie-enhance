@@ -81,13 +81,13 @@ class _ProjectBase:
     # 编译
     def _compile(self, contract_sources: Dict, compiler_config: Dict, silent: bool) -> None:
         compiler_config.setdefault("solc", {})
-        
+
         print(f"compiler_config:{compiler_config}\n")
 
         # if compiler_config['solc']['skip_compile']:
         #     print("skip =======>")
         #     pass
-        
+
         allow_paths = None
         cwd = os.getcwd()
         if self._path is not None:
@@ -110,11 +110,12 @@ class _ProjectBase:
                 remappings=compiler_config["solc"].get("remappings", []),
                 optimizer=compiler_config["solc"].get("optimizer", None),
                 use_cache=compiler_config["solc"].get("use_cache", False),
+                no_generate=compiler_config["solc"].get("no_generate", False),
             )
         finally:
             os.chdir(cwd)
 
-        print("====>CONFIG",CONFIG)
+        print("====>CONFIG", CONFIG)
 
         for alias, data in build_json.items():
             # 保存编译后的合约
@@ -654,7 +655,6 @@ def from_brownie_mix(
 
 
 def from_ethpm(uri: str) -> "TempProject":
-
     """
     Generates a TempProject from an ethPM package.
     """

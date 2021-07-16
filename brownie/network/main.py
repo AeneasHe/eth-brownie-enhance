@@ -38,23 +38,37 @@ def connect(network: str = None, launch_rpc: bool = True) -> None:
                 pass
 
         web3.connect(host, active.get("timeout", 30))
-        if CONFIG.network_type == "development" and launch_rpc and not rpc.is_active():
-            # 如果是测试环境，需要启动rpc,而且rpc是激活的
-            if is_connected():
-                if web3.eth.block_number != 0:
-                    # warnings.warn(
-                    #     f"Development network has a block height of {web3.eth.block_number}",
-                    #     BrownieEnvironmentWarning,
-                    # )
-                    print(f"Development network has a block height of {web3.eth.block_number}")
-                rpc.attach(host)
-            else:
-                rpc.launch(active["cmd"], **active["cmd_settings"])
+        if CONFIG.settings.get("show_config"):
+            print("配置：", dict(CONFIG.settings))
+
+        if CONFIG.settings.get("remote_development").get("use_remote"):
+            print('连接远程测试网络')
+            mnemonic = CONFIG.settings.get("remote_development").get("mnemonic")
+            if not mnemonic:
+                mnemonic = "season turtle oblige language winner purpose call engine thunder pepper cactus base"
+            Accounts().from_mnemonic(mnemonic, 10)
         else:
-            Accounts()._reset()
-        if CONFIG.network_type == "live" or CONFIG.settings["dev_deployment_artifacts"]:
-            for p in project.get_loaded_projects():
-                p._load_deployments()
+            if CONFIG.network_type == "development" and launch_rpc and not rpc.is_active():
+                # 如果是测试环境，需要启动rpc,而且rpc是激活的
+                if is_connected():
+                    # 连接节点
+                    if web3.eth.block_number != 0:
+                        # warnings.warn(
+                        #     f"Development network has a block height of {web3.eth.block_number}",
+                        #     BrownieEnvironmentWarning,
+                        # )
+                        print(f"Development network has a block height of {web3.eth.block_number}")
+                    print('连接已经启动的eth节点')
+                    rpc.attach(host)
+                else:
+                    # 启动节点
+                    print('启动eth节点')
+                    rpc.launch(active["cmd"], **active["cmd_settings"])
+            else:
+                Accounts()._reset()
+            if CONFIG.network_type == "live" or CONFIG.settings["dev_deployment_artifacts"]:
+                for p in project.get_loaded_projects():
+                    p._load_deployments()
 
     except Exception:
         CONFIG.clear_active()

@@ -89,6 +89,7 @@ def compile_and_format(
     remappings: Optional[list] = None,
     optimizer: Optional[Dict] = None,
     use_cache: Optional[bool] = False,
+    no_generate: Optional[bool] = False,
 ) -> Dict:
     """Compiles contracts and returns build data.
 
@@ -219,9 +220,11 @@ def compile_and_format(
             f = output_filename.open("w")
             json.dump(output_json, f)
             f.close()
-        # 将输出文件output_json解析成保存文件build_json
-        build_json.update(generate_build_json(input_json, output_json, compiler_data, silent))
-
+        if not no_generate:
+            # 将输出文件output_json解析成保存文件build_json
+            build_json.update(generate_build_json(input_json, output_json, compiler_data, silent))
+        else:
+            print("=============> 配置no_generate取消了合约构建，跳过合约自动构建\n")
     return build_json
 
 
@@ -236,7 +239,6 @@ def generate_input_json(
     remappings: Optional[list] = None,
     optimizer: Optional[Dict] = None,
 ) -> Dict:
-
     """Formats contracts to the standard solc input json.
 
     Args:
@@ -315,7 +317,6 @@ def _get_allow_paths(allow_paths: Optional[str], remappings: list) -> str:
 def compile_from_input_json(
     input_json: Dict, silent: bool = True, allow_paths: Optional[str] = None
 ) -> Dict:
-
     """
     Compiles contracts from a standard input json.
 
