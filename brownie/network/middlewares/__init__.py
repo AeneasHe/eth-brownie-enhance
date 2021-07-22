@@ -90,7 +90,10 @@ def get_middlewares(web3: Web3, network_type: str) -> Dict:
         One of "live" or "development".
     """
     middleware_layers: Dict[int, List] = {}
+
+    # 加载插件对象
     for obj in _middlewares:
+        #print("====>obj", obj)
         layer = obj.get_layer(web3, network_type)
         if layer is not None:
             middleware_layers.setdefault(layer, []).append(obj)

@@ -126,7 +126,9 @@ class RequestCachingMiddleware(BrownieMiddlewareABC):
         return time.time() - self.last_request
 
     def block_filter_loop(self) -> None:
+        n = 0
         while not self.is_killed:
+            print(f"block_filter_loop ===>{n+1}")
             # if the last RPC request was > 60 seconds ago, reduce the rate of updates.
             # we eventually settle at one query per minute after 10 minutes of no requests.
             with self.lock:

@@ -6,6 +6,7 @@ import os
 import shutil
 import sys
 import warnings
+import wpath
 import zipfile
 from base64 import b64encode
 from hashlib import sha1
@@ -82,7 +83,7 @@ class _ProjectBase:
     def _compile(self, contract_sources: Dict, compiler_config: Dict, silent: bool) -> None:
         compiler_config.setdefault("solc", {})
 
-        print(f"compiler_config:{compiler_config}\n")
+        print(f"====>compiler_config:{wpath.pretty(compiler_config)}\n")
 
         # if compiler_config['solc']['skip_compile']:
         #     print("skip =======>")
@@ -115,7 +116,7 @@ class _ProjectBase:
         finally:
             os.chdir(cwd)
 
-        print("====>CONFIG", CONFIG)
+        print("====>CONFIG", wpath.pretty(CONFIG.settings))
 
         for alias, data in build_json.items():
             # 保存编译后的合约
@@ -188,14 +189,18 @@ class Project(_ProjectBase):
     """
 
     def __init__(self, name: str, project_path: Path) -> None:
+        # 项目的根路径
         self._path: Path = project_path
         self._envvars = _load_project_envvars(project_path)
+
+        # 项目的目录结构
         self._structure = expand_posix_vars(
             _load_project_structure_config(project_path), self._envvars
         )
         self._build_path: Path = project_path.joinpath(self._structure["build"])
 
         self._name = name
+
         self._active = False
         self.load()
 
@@ -207,14 +212,16 @@ class Project(_ProjectBase):
 
         # 加载智能合约源码
         contract_sources = _load_sources(self._path, self._structure["contracts"], False)
-        # 加载接口
+        # 加载接口源码
         interface_sources = _load_sources(self._path, self._structure["interfaces"], True)
+        # 源码管理器
         self._sources = Sources(contract_sources, interface_sources)
+        # 编译器
         self._build = Build(self._sources)
-
+        # 合约列表
         contract_list = self._sources.get_contract_list()
 
-        # 遍历部署目录build/contracts下的结果文件
+        # 遍历编译结果目录build/contracts下的hcontract abi文件
         for path in list(self._build_path.glob("contracts/*.json")):
             try:
                 with path.open() as fp:
@@ -236,7 +243,7 @@ class Project(_ProjectBase):
                 continue
             self._build._add_contract(build_json)
 
-        # 遍历部署目录build/contracts下的结果文件
+        # 遍历编译结果目录build/contracts下的interface abi文件
         interface_hashes = {}
         interface_list = self._sources.get_interface_list()
         for path in list(self._build_path.glob("interfaces/*.json")):
@@ -594,10 +601,14 @@ def check_for_project(path: Union[Path, str] = ".") -> Optional[Path]:
 
     return None
 
+# 获取已经加载的项目
+
 
 def get_loaded_projects() -> List["Project"]:
     """Returns a list of currently loaded Project objects."""
     return _loaded_projects.copy()
+
+# 创建新项目
 
 
 def new(
@@ -765,6 +776,8 @@ def load(project_path: Union[Path, str, None] = None, name: Optional[str] = None
         raise ProjectNotFound("Could not find Brownie project")
 
     project_path = Path(project_path).resolve()
+
+    # 如果项目没有命名，项目将采用文件夹的名称+project结尾作为项目名
     if name is None:
         name = project_path.name
         if not name.lower().endswith("project"):
@@ -782,6 +795,7 @@ def load(project_path: Union[Path, str, None] = None, name: Optional[str] = None
 
 
 def _install_dependencies(path: Path) -> None:
+    # 安装依赖的合约
     for package_id in _load_project_dependencies(path):
         try:
             install_package(package_id)
@@ -803,9 +817,12 @@ def install_package(package_id: str) -> str:
     str
         ID of the installed package.
     """
+    print("====>dependencies package_id:", package_id)
     if urlparse(package_id).scheme in ("erc1319", "ethpm"):
+        # 从ethpm安装依赖
         return _install_from_ethpm(package_id)
     else:
+        # 从github安装依赖
         return _install_from_github(package_id)
 
 
@@ -859,6 +876,9 @@ def _install_from_github(package_id: str) -> str:
     install_path = base_install_path.joinpath(f"{org}")
     install_path.mkdir(exist_ok=True)
     install_path = install_path.joinpath(f"{repo}@{version}")
+
+    print("====>github install_path:", install_path)
+
     if install_path.exists():
         raise FileExistsError("Package is aleady installed")
 
