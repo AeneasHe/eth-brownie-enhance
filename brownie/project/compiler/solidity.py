@@ -75,12 +75,12 @@ def compile_from_input_json(
             print(f"  EVM Version: {input_json['settings']['evmVersion'].capitalize()}")
 
     try:
-        t0=time.time()
-        re= solcx.compile_standard(input_json, allow_paths=allow_paths)
-        t1=time.time()
-        t=int((t1-t0)*1000)
+        t0 = time.time()
+        re = solcx.compile_standard(input_json, allow_paths=allow_paths)
+        t1 = time.time()
+        t = int((t1 - t0) * 1000)
 
-        print(f'=============> solidity compile time:{t}ms\n')
+        print(f"\nsolidity compile time:{t}ms\n")
         return re
 
     except solcx.exceptions.SolcError as e:

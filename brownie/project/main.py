@@ -83,7 +83,7 @@ class _ProjectBase:
     def _compile(self, contract_sources: Dict, compiler_config: Dict, silent: bool) -> None:
         compiler_config.setdefault("solc", {})
 
-        print(f"====>compiler_config:{wpath.pretty(compiler_config)}\n")
+        # print(f"====>compiler_config:{wpath.pretty(compiler_config)}\n")
 
         # if compiler_config['solc']['skip_compile']:
         #     print("skip =======>")
@@ -97,7 +97,7 @@ class _ProjectBase:
             os.chdir(self._path)
 
         try:
-            print("main task :contract compile-0.1\n")
+            # print("main task :contract compile-0.1\n")
             # 编译合约
             build_json = compiler.compile_and_format(
                 contract_sources,
@@ -116,7 +116,8 @@ class _ProjectBase:
         finally:
             os.chdir(cwd)
 
-        print("====>CONFIG", wpath.pretty(CONFIG.settings))
+        if CONFIG.settings.get("show_config"):
+            print("====>config:", CONFIG.settings)
 
         for alias, data in build_json.items():
             # 保存编译后的合约
@@ -601,12 +602,14 @@ def check_for_project(path: Union[Path, str] = ".") -> Optional[Path]:
 
     return None
 
+
 # 获取已经加载的项目
 
 
 def get_loaded_projects() -> List["Project"]:
     """Returns a list of currently loaded Project objects."""
     return _loaded_projects.copy()
+
 
 # 创建新项目
 
@@ -817,10 +820,13 @@ def install_package(package_id: str) -> str:
     str
         ID of the installed package.
     """
-    print("====>dependencies package_id:", package_id)
+    # print("====>dependencies package_id:", package_id)
+
     if urlparse(package_id).scheme in ("erc1319", "ethpm"):
         # 从ethpm安装依赖
         return _install_from_ethpm(package_id)
+    elif package_id.startswith("brownie"):
+        return _install_from_brownie(package_id)
     else:
         # 从github安装依赖
         return _install_from_github(package_id)
@@ -862,6 +868,77 @@ def _maybe_retrieve_github_auth() -> Dict[str, str]:
     return {}
 
 
+def _install_from_brownie(package_id: str) -> str:
+    org = "brownie"
+    repo = "brownie_project"
+    version = "0.1"
+
+    install_path = _get_data_folder().joinpath(f"packages/{org}")
+    install_path.mkdir(exist_ok=True)
+    install_path = install_path.joinpath(f"{repo}@{version}")
+
+    # shutil.copy("", install_path)
+    # print("====>brownie project install path:", install_path)
+
+    raw_path = os.path.join(os.path.dirname(__file__), "brownie_project")
+    # print("====>【package】\n", raw_path, "\n", install_path)
+
+    try:
+        # if install_path.exists():
+        #     # print("===>remove")
+        #     shutil.rmtree(install_path)
+        # os.makedirs(install_path)
+        if not install_path.exists():
+            shutil.copytree(raw_path, install_path)
+        # print("===>copy")
+    except Exception as e:
+        # print("copy fail", e)
+        pass
+
+    try:
+        # 可以安装的目录包下面需要有brownie-config.yaml配置文件
+        if not install_path.joinpath("brownie-config.yaml").exists():
+            brownie_config: Dict = {"project_structure": {}}
+
+            contract_paths = set(
+                i.relative_to(install_path).parts[0] for i in install_path.glob("**/*.sol")
+            )
+            contract_paths.update(
+                i.relative_to(install_path).parts[0] for i in install_path.glob("**/*.vy")
+            )
+
+            # 如果包下面没有合约文件夹
+            if not contract_paths:
+                raise InvalidPackage(f"{package_id} does not contain any .sol or .vy files")
+
+            # 如果brownie_config的配置中
+            if install_path.joinpath("contracts").is_dir():
+                brownie_config["project_structure"]["contracts"] = "contracts"
+            elif len(contract_paths) == 1:
+                brownie_config["project_structure"]["contracts"] = contract_paths.pop()
+            else:
+                raise InvalidPackage(
+                    f"{package_id} has no `contracts/` subdirectory, and "
+                    "multiple directories containing source files"
+                )
+
+            with install_path.joinpath("brownie-config.yaml").open("w") as fp:
+                yaml.dump(brownie_config, fp)
+
+        # 加载目标项目
+        project = load(install_path)
+        project.close()
+    except Exception as e:
+        notify(
+            "WARNING",
+            f"Unable to compile {package_id} due to a {type(e).__name__} - you may still be able to"
+            " import sources from the package, but will be unable to load the package directly.\n",
+        )
+
+    # 返回项目的版本
+    return f"{org}/{repo}@{version}"
+
+
 def _install_from_github(package_id: str) -> str:
     try:
         path, version = package_id.split("@")
@@ -877,7 +954,8 @@ def _install_from_github(package_id: str) -> str:
     install_path.mkdir(exist_ok=True)
     install_path = install_path.joinpath(f"{repo}@{version}")
 
-    print("====>github install_path:", install_path)
+    # 安装目录
+    # print("====>github install_path:", install_path)
 
     if install_path.exists():
         raise FileExistsError("Package is aleady installed")
@@ -914,12 +992,14 @@ def _install_from_github(package_id: str) -> str:
     download_url = next(i["zipball_url"] for i in data if i["name"].lstrip("v") == version)
 
     existing = list(install_path.parent.iterdir())
-    _stream_download(download_url, str(install_path.parent), headers)
 
+    # 下载目标包到安装目录
+    _stream_download(download_url, str(install_path.parent), headers)
     installed = next(i for i in install_path.parent.iterdir() if i not in existing)
     shutil.move(installed, install_path)
 
     try:
+        # 可以安装的目录包下面需要有brownie-config.yaml配置文件
         if not install_path.joinpath("brownie-config.yaml").exists():
             brownie_config: Dict = {"project_structure": {}}
 
@@ -929,8 +1009,12 @@ def _install_from_github(package_id: str) -> str:
             contract_paths.update(
                 i.relative_to(install_path).parts[0] for i in install_path.glob("**/*.vy")
             )
+
+            # 如果包下面没有合约文件夹
             if not contract_paths:
                 raise InvalidPackage(f"{package_id} does not contain any .sol or .vy files")
+
+            # 如果brownie_config的配置中
             if install_path.joinpath("contracts").is_dir():
                 brownie_config["project_structure"]["contracts"] = "contracts"
             elif len(contract_paths) == 1:
@@ -944,6 +1028,7 @@ def _install_from_github(package_id: str) -> str:
             with install_path.joinpath("brownie-config.yaml").open("w") as fp:
                 yaml.dump(brownie_config, fp)
 
+        # 加载目标项目
         project = load(install_path)
         project.close()
     except InvalidPackage:
@@ -956,6 +1041,7 @@ def _install_from_github(package_id: str) -> str:
             " import sources from the package, but will be unable to load the package directly.\n",
         )
 
+    # 返回项目的版本
     return f"{org}/{repo}@{version}"
 
 

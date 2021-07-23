@@ -40,7 +40,7 @@ def main():
     if project.check_for_project():
         active_project = project.load()
         active_project.load_config()
-        print(f"{active_project._name} is the active project.")
+        print(f"{active_project._name} is the active project.\n")
 
     network.connect(CONFIG.argv["network"])
 

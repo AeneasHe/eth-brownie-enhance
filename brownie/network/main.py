@@ -42,7 +42,7 @@ def connect(network: str = None, launch_rpc: bool = True) -> None:
             print("配置：", dict(CONFIG.settings))
 
         if CONFIG.settings.get("remote_development").get("use_remote"):
-            print('连接远程测试网络')
+            print("连接远程测试网络")
             mnemonic = CONFIG.settings.get("remote_development").get("mnemonic")
             if not mnemonic:
                 mnemonic = "season turtle oblige language winner purpose call engine thunder pepper cactus base"
@@ -58,11 +58,11 @@ def connect(network: str = None, launch_rpc: bool = True) -> None:
                         #     BrownieEnvironmentWarning,
                         # )
                         print(f"Development network has a block height of {web3.eth.block_number}")
-                    print('连接已经启动的eth节点')
+                    print("\n连接已经启动的eth节点")
                     rpc.attach(host)
                 else:
                     # 启动节点
-                    print('启动eth节点')
+                    print("启动eth节点")
                     rpc.launch(active["cmd"], **active["cmd_settings"])
             else:
                 Accounts()._reset()

@@ -114,9 +114,8 @@ class Rpc(metaclass=_Singleton):
         resolved_addr = (ip, laddr[1])
         pid = self._find_rpc_process_pid(resolved_addr)
 
-        #print(f"Attached to local RPC client listening at '{laddr[0]}:{laddr[1]}'...")
-        print(f"当前连接的节点是: '{laddr[0]}:{laddr[1]}'...\n")
-
+        # print(f"Attached to local RPC client listening at '{laddr[0]}:{laddr[1]}'...")
+        print(f"\n当前连接的节点是: '{laddr[0]}:{laddr[1]}'...\n")
 
         self.process = psutil.Process(pid)
 

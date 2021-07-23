@@ -182,7 +182,7 @@ def compile_and_format(
         # print("data folder",_get_data_folder())
         # print("path_list",path_list)
 
-        print("contract compile-2\n")
+        # print("contract compile-2\n")
 
         # 缓存数据文件
         build_path = get_build_path()
@@ -191,7 +191,7 @@ def compile_and_format(
 
         # 编译合约得到输出文件
         if use_cache and output_filename.exists():
-            print("=============> 从缓存加载编译的合约\n")
+            print("\n=============> 从缓存加载编译的合约\n")
             # 直接从缓存加载
             # f= output_filename.open('rb')
             # output_json = pickle.load(f)
@@ -200,9 +200,9 @@ def compile_and_format(
             f.close()
         else:
             if use_cache:
-                print("=============> 缓存不存在\n")
+                print("\n=============> 缓存不存在\n")
 
-            print("=============> 重新编译所有合约\n")
+            print("\n=============> 重新编译所有合约\n")
             # 重新编译
             output_json = compile_from_input_json(input_json, silent, allow_paths)
 
@@ -224,7 +224,7 @@ def compile_and_format(
             # 将输出文件output_json解析成保存文件build_json
             build_json.update(generate_build_json(input_json, output_json, compiler_data, silent))
         else:
-            print("=============> 配置no_generate取消了合约构建，跳过合约自动构建\n")
+            print("\n=============> 配置no_generate取消了合约构建，跳过合约自动构建\n")
     return build_json
 
 
@@ -330,13 +330,13 @@ def compile_from_input_json(
 
     if input_json["language"] == "Vyper":
         res = vyper.compile_from_input_json(input_json, silent, allow_paths)
-        print("contract compile-3 result:\n")
+        # print("contract compile-3 result:\n")
         return res
 
     if input_json["language"] == "Solidity":
         allow_paths = _get_allow_paths(allow_paths, input_json["settings"]["remappings"])
         res = solidity.compile_from_input_json(input_json, silent, allow_paths)
-        print("contract compile finish\n")
+        # print("contract compile finish\n")
         return res
 
     raise UnsupportedLanguage(f"{input_json['language']}")
@@ -461,7 +461,7 @@ def generate_build_json(
         print("")
     _t1 = time.time()
     t = int((_t1 - _t0) * 1000)
-    print(f"=============> build_json cost time :{t} ms")
+    print(f"\ngenerate Contracts cost time :{t} ms\n")
     return build_json
 
 

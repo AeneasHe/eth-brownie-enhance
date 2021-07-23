@@ -17,6 +17,7 @@ from brownie.project import sources
 from brownie.project.compiler.utils import expand_source_map
 from brownie.project.sources import is_inside_offset
 import time
+
 vvm_logger = logging.getLogger("vvm")
 vvm_logger.setLevel(10)
 sh = logging.StreamHandler()
@@ -231,24 +232,26 @@ def compile_from_input_json(
         outputs.remove("userdoc")
         outputs.remove("devdoc")
 
-    t0=time.time()
+    t0 = time.time()
 
-    
     if version == Version(vyper.__version__):
         try:
-            output_json= vyper_json.compile_json(input_json, root_path=allow_paths)
+            output_json = vyper_json.compile_json(input_json, root_path=allow_paths)
         except VyperException as exc:
             raise exc.with_traceback(None)
     else:
         try:
-            output_json= vvm.compile_standard(input_json, base_path=allow_paths, vyper_version=version)
+            output_json = vvm.compile_standard(
+                input_json, base_path=allow_paths, vyper_version=version
+            )
         except vvm.exceptions.VyperError as exc:
             raise CompilerError(exc, "vyper")
 
-    t1=time.time()
-    t=int((t1-t0)*1000)
-    print(f'=============> vyper compile time:{t}ms')
+    t1 = time.time()
+    t = int((t1 - t0) * 1000)
+    print(f"\n=============> vyper compile time:{t}ms")
     return output_json
+
 
 def _get_unique_build_json(
     output_evm: Dict, path_str: str, contract_name: str, ast_json: Union[Dict, List], offset: Tuple

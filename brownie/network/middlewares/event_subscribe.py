@@ -10,6 +10,8 @@ from web3 import Web3
 
 from brownie.network.middlewares import BrownieMiddlewareABC
 from brownie import project
+from brownie._config import CONFIG
+from web3._utils.events import get_event_data
 
 
 def get_contract_by_address(active_project, address):
@@ -22,6 +24,29 @@ def get_contract_by_address(active_project, address):
 
 
 request_duty = 6
+
+message_event_abi = {
+    "anonymous": False,
+    "inputs": [
+        {
+            "indexed": False,
+            "internalType": "string",
+            "name": "msg",
+            "type": "string",
+        }
+    ],
+    "name": "Message",
+    "type": "event",
+}
+
+
+def parse_log(
+    w3,
+    log,
+):
+    codec = w3.codec
+    evt = get_event_data(codec, message_event_abi, log)
+    print("\n---->msg:", evt["args"]["msg"])
 
 
 class EventSubscribeMiddleware(BrownieMiddlewareABC):
@@ -56,7 +81,7 @@ class EventSubscribeMiddleware(BrownieMiddlewareABC):
         n = 0
         while not self.is_killed:
             n += 1
-            #print(f"===>event_filter_loop {n}")
+            # print(f"===>event_filter_loop {n}")
 
             # if the last RPC request was > 60 seconds ago, reduce the rate of updates.
             # we eventually settle at one query per minute after 10 minutes of no requests.
@@ -87,20 +112,38 @@ class EventSubscribeMiddleware(BrownieMiddlewareABC):
                 # 如果获取新事件成功
                 if new_events:
                     for event in new_events:
-                        print('\n---->event:', event)
-                        contract_address = event['address']
-                        _contract = self.get_contract_by_address(contract_address)
-                        if _contract:
-                            #print('---->get_contract success')
-                            contract = self.w3.eth.contract(
-                                address=_contract.address, abi=_contract.abi)
-                            tx_hash = event['transactionHash']
-                            receipt = self.w3.eth.get_transaction_receipt(tx_hash)
-                            processed_logs = contract.events.Message().processReceipt(receipt)
-                            print('---->parsed event:', processed_logs)
+                        if CONFIG.settings.get("show_all_events"):
+                            print("\n---->event:", event)
 
-                            for log in processed_logs:
-                                print('---->msg:', log['args'])
+                        parse_log(self.w3, event)
+
+                        # contract_address = event["address"]
+                        # _contract = self.get_contract_by_address(contract_address)
+                        # if _contract:
+
+                        # tx_hash = event["transactionHash"]
+                        # receipt = self.w3.eth.get_transaction_receipt(tx_hash)
+
+                        # # print('---->get_contract success')
+
+                        # contract = self.w3.eth.contract(
+                        #     address=_contract.address, abi=_contract.abi
+                        # )
+
+                        # # contract = self.w3.eth.contract(abi=_contract.abi)
+                        # message_event = contract.events.Message()
+
+                        # # print("====>message_event:", message_event)
+
+                        # processed_logs = message_event.processReceipt(receipt)
+                        # if CONFIG.settings.get("show_parsed_events"):
+                        #     print("\n---->parsed event:", processed_logs)
+
+                        # for log in processed_logs:
+                        #     try:
+                        #         print("\n---->msg:", log["args"]["msg"])
+                        #     except Exception as e:
+                        #         print("parse msg error\n", e)
 
             if new_events and self.time_since < 15:
                 # if this update found a new block and we've been querying

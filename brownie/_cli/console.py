@@ -50,7 +50,7 @@ def main():
         active_project = project.load()
         active_project.load_config()
         active_project._add_to_main_namespace()
-        print(f"{active_project._name} is the active project.")
+        print(f"{active_project._name} is the active project.\n")
     else:
         active_project = None
         sys.path.insert(0, "")

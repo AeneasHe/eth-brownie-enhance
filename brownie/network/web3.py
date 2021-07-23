@@ -52,7 +52,7 @@ class Web3(_Web3):
 
         uri = _expand_environment_vars(uri)
 
-        print(f"\nconnect provider uri:{uri}\n")
+        # print(f"\nconnect provider uri:{uri}\n")
 
         try:
             if Path(uri).exists():
@@ -97,7 +97,7 @@ class Web3(_Web3):
 
         middleware_layers = get_middlewares(self, CONFIG.network_type)
 
-        print("====>middleware:", middleware_layers)
+        # print("====>middleware:", middleware_layers)
 
         # middlewares with a layer below zero are injected
         to_inject = sorted((i for i in middleware_layers if i < 0), reverse=True)
@@ -130,7 +130,7 @@ class Web3(_Web3):
             return False
         return super().isConnected()
 
-    @ property
+    @property
     def supports_traces(self) -> bool:
         if not self.provider:
             return False
@@ -144,7 +144,7 @@ class Web3(_Web3):
 
         return self._supports_traces
 
-    @ property
+    @property
     def _mainnet(self) -> _Web3:
         # a web3 instance connected to the mainnet
         if self.isConnected() and CONFIG.active_network["id"] == "mainnet":
@@ -159,7 +159,7 @@ class Web3(_Web3):
             self._mainnet_w3.enable_unstable_package_management_api()
         return self._mainnet_w3
 
-    @ property
+    @property
     def genesis_hash(self) -> str:
         """The genesis hash of the currently active network."""
         if self.provider is None:
@@ -168,7 +168,7 @@ class Web3(_Web3):
             self._genesis_hash = self.eth.get_block(0)["hash"].hex()[2:]
         return self._genesis_hash
 
-    @ property
+    @property
     def chain_uri(self) -> str:
         if self.provider is None:
             raise ConnectionError("web3 is not currently connected")
@@ -179,7 +179,7 @@ class Web3(_Web3):
             _chain_uri_cache[self.genesis_hash] = chain_uri
         return _chain_uri_cache[self.genesis_hash]
 
-    @ property
+    @property
     def chain_id(self) -> int:
         # chain ID is needed each time we a sign a transaction, however we
         # cache it after the first request to avoid redundant RPC calls
