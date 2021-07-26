@@ -45,8 +45,11 @@ def parse_log(
     log,
 ):
     codec = w3.codec
-    evt = get_event_data(codec, message_event_abi, log)
-    print("\n---->msg:", evt["args"]["msg"])
+    try:
+        evt = get_event_data(codec, message_event_abi, log)
+        print("\n---->msg:", evt["args"]["msg"])
+    except:
+        pass
 
 
 class EventSubscribeMiddleware(BrownieMiddlewareABC):
