@@ -825,7 +825,7 @@ def install_package(package_id: str) -> str:
     if urlparse(package_id).scheme in ("erc1319", "ethpm"):
         # 从ethpm安装依赖
         return _install_from_ethpm(package_id)
-    elif package_id.startswith("brownie"):
+    elif package_id.startswith("Brownie"):
         return _install_from_brownie(package_id)
     else:
         # 从github安装依赖
@@ -869,19 +869,27 @@ def _maybe_retrieve_github_auth() -> Dict[str, str]:
 
 
 def _install_from_brownie(package_id: str) -> str:
-    org = "brownie"
-    repo = "brownie_project"
-    version = "0.1"
+    org = "Brownie"
+    repo = "brownie-contracts"
+    version = "0.8.0"
 
-    install_path = _get_data_folder().joinpath(f"packages/{org}")
+    data_folder = _get_data_folder()
+
+    install_path = data_folder.joinpath(f"packages/{org}")
     install_path.mkdir(exist_ok=True)
+
+    _version = package_id.split('@')[1]
+    if _version.startswith("0.8"):
+        version = "0.8.0"
+    elif _version.startswith("0.6"):
+        version = "0.6.6"
+    else:
+        raise Exception(f"brownie package version not match, support version:0.8.0,0.6.6")
+
     install_path = install_path.joinpath(f"{repo}@{version}")
+    raw_path = os.path.join(os.path.dirname(__file__), f"{repo}@{version}")
 
-    # shutil.copy("", install_path)
-    # print("====> brownie project install path:", install_path)
-
-    raw_path = os.path.join(os.path.dirname(__file__), "brownie_project")
-    # print("====>【package】\n", raw_path, "\n", install_path)
+    print("====>【package】\n", raw_path, "\n", install_path)
 
     try:
         # if install_path.exists():

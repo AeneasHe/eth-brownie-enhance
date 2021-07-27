@@ -5,8 +5,10 @@ include requirements*.in
 include requirements*.txt
 include brownie/data/*.yaml
 include brownie/data/interfaces/*.json
-include brownie/project/brownie_project/contracts/*.sol
-include brownie/project/brownie_project/*.yaml
+include brownie/project/brownie-contracts@0.6.6/contracts/*.sol
+include brownie/project/brownie-contracts@0.6.6/*.yaml
+include brownie/project/brownie-contracts@0.8.0/contracts/*.sol
+include brownie/project/brownie-contracts@0.8.0/*.yaml
 
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
