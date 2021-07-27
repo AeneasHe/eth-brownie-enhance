@@ -878,7 +878,7 @@ def _install_from_brownie(package_id: str) -> str:
     install_path = install_path.joinpath(f"{repo}@{version}")
 
     # shutil.copy("", install_path)
-    # print("====>brownie project install path:", install_path)
+    # print("====> brownie project install path:", install_path)
 
     raw_path = os.path.join(os.path.dirname(__file__), "brownie_project")
     # print("====>【package】\n", raw_path, "\n", install_path)
@@ -889,6 +889,7 @@ def _install_from_brownie(package_id: str) -> str:
         #     shutil.rmtree(install_path)
         # os.makedirs(install_path)
         if not install_path.exists():
+            print("====> install brownie project at:", install_path)
             shutil.copytree(raw_path, install_path)
         # print("===>copy")
     except Exception as e:
