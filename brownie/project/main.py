@@ -6,7 +6,7 @@ import os
 import shutil
 import sys
 import warnings
-import wpath
+from wpath import *
 import zipfile
 from base64 import b64encode
 from hashlib import sha1
@@ -891,7 +891,7 @@ def _install_from_brownie(package_id: str) -> str:
     install_path = install_path.joinpath(f"{repo}@{version}")
     raw_path = os.path.join(os.path.dirname(__file__), f"{repo}@{version}")
 
-    print("====>【package】\n", raw_path, "\n", install_path)
+    print_y(f"【package】\n{raw_path}\n{install_path}")
 
     try:
         # if install_path.exists():

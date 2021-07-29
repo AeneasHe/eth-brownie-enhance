@@ -313,7 +313,7 @@ websockets==8.1
     # via
     #   -r requirements.txt
     #   web3
-wpath==0.0.8
+wpath==0.1.1
     # via -r requirements.txt
 
 # The following packages are considered to be unsafe in a requirements file:

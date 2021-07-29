@@ -201,7 +201,7 @@ webencodings==0.5.1
     # via bleach
 wheel==0.36.2
     # via -r requirements-dev.in
-wpath==0.0.8
+wpath==0.1.1
     # via
     #   -c requirements.txt
     #   -r requirements-dev.in

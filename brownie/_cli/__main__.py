@@ -3,7 +3,7 @@
 import importlib
 import sys
 from pathlib import Path
-
+from wpath import *
 from brownie import network
 from brownie._config import CONFIG, __version__
 from brownie.exceptions import ProjectNotFound
@@ -39,7 +39,7 @@ def main():
 
     print(f"Brownie v{__version__} - Python development framework for Ethereum\n")
 
-    print("\n=====>\n",sys.argv,"\n=====>\n")
+    print_y(f"【sys.argv】\n{sys.argv}")
 
     if "--version" in sys.argv:
         sys.exit()

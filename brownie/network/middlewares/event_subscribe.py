@@ -3,7 +3,7 @@ from collections import OrderedDict
 import threading
 import time
 import json
-import wpath
+from wpath import *
 from hexbytes import HexBytes
 
 from web3 import Web3
@@ -47,9 +47,9 @@ def parse_log(
     codec = w3.codec
     try:
         evt = get_event_data(codec, message_event_abi, log)
-        print("\n---->msg:", evt["args"]["msg"])
-    except:
-        pass
+        print(f'\n{color_y("console.log:")} {color_r(str(evt["args"]["msg"]))}')
+    except Exception as e:
+        print_r(f"error:{e}")
 
 
 class EventSubscribeMiddleware(BrownieMiddlewareABC):
@@ -84,7 +84,7 @@ class EventSubscribeMiddleware(BrownieMiddlewareABC):
         n = 0
         while not self.is_killed:
             n += 1
-            # print(f"===>event_filter_loop {n}")
+            #print_y(f"===>event_filter_loop {n}")
 
             # if the last RPC request was > 60 seconds ago, reduce the rate of updates.
             # we eventually settle at one query per minute after 10 minutes of no requests.
@@ -116,7 +116,7 @@ class EventSubscribeMiddleware(BrownieMiddlewareABC):
                 if new_events:
                     for event in new_events:
                         if CONFIG.settings.get("show_all_events"):
-                            print("\n---->event:", event)
+                            print_r(f"\n---->event:{event}" )
 
                         parse_log(self.w3, event)
 

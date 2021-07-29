@@ -73,18 +73,18 @@ def main():
 
 
     try:
-        print("----->1")
+        #print("----->1")
         if args["--interactive"]:
             # 脚本执行完成以后，打开控制台
-            print("----->2")
+            #print("----->2")
 
             # filter internal objects from the namespace prior to opening the console
             globals_dict = {k: v for k, v in frame.f_globals.items() if not k.startswith("__")}
             extra_locals = {"_": return_value, **globals_dict, **frame.f_locals}
-            print("----->3")
+            #print("----->3")
             # 启动控制台, Console是brownie写的控制台类
             shell = Console(active_project, extra_locals)
-            print("----->4")
+            #print("----->4")
             shell.interact(banner="\nInteractive mode enabled. Use quit() to close.", exitmsg="")
 
     finally:
