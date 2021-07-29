@@ -7,7 +7,11 @@ from wpath import *
 from hexbytes import HexBytes
 
 from web3 import Web3
-
+from web3.exceptions import (
+    InvalidEventABI,
+    LogTopicError,
+    MismatchedABI,
+)
 from brownie.network.middlewares import BrownieMiddlewareABC
 from brownie import project
 from brownie._config import CONFIG
@@ -48,7 +52,10 @@ def parse_log(
     try:
         evt = get_event_data(codec, message_event_abi, log)
         print(f'\n{color_y("console.log:")} {color_r(str(evt["args"]["msg"]))}')
+    except MismatchedABI:
+        pass
     except Exception as e:
+        print_m(type(e))
         print_r(f"error:{e}")
 
 
