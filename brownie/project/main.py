@@ -787,7 +787,9 @@ def load(project_path: Union[Path, str, None] = None, name: Optional[str] = None
             name += " project"
         name = "".join(i for i in name.title() if i.isalpha())
     if next((True for i in _loaded_projects if i._name == name), False):
-        raise ProjectAlreadyLoaded("There is already a project loaded with this name")
+        #raise ProjectAlreadyLoaded("There is already a project loaded with this name")
+        print("\n========\nThere is already a project loaded with this name\n========\n")
+        return None
 
     # paths
     _create_folders(project_path)

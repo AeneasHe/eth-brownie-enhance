@@ -39,6 +39,8 @@ def main():
 
     print(f"Brownie v{__version__} - Python development framework for Ethereum\n")
 
+    print("\n=====>\n",sys.argv,"\n=====>\n")
+
     if "--version" in sys.argv:
         sys.exit()
 

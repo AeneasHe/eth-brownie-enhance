@@ -37,13 +37,20 @@ def main():
     _update_argv_from_docopt(args)
 
     active_project = None
+
     if project.check_for_project():
         active_project = project.load()
-        active_project.load_config()
-        print(f"{active_project._name} is the active project.\n")
+        print("====>active_project:",active_project)
+        if active_project:
+            active_project.load_config()
+            print(f"{active_project._name} is the active project.\n")
 
-    network.connect(CONFIG.argv["network"])
+            network.connect(CONFIG.argv["network"])
 
+    projects= project.get_loaded_projects()
+    if projects:
+        active_project=projects[0]
+        
     path, _ = _get_path(args["<filename>"])
     path_str = path.absolute().as_posix()
 
@@ -64,16 +71,20 @@ def main():
         exit_code = 1
         return_value = None
 
+
     try:
+        print("----->1")
         if args["--interactive"]:
             # 脚本执行完成以后，打开控制台
+            print("----->2")
 
             # filter internal objects from the namespace prior to opening the console
             globals_dict = {k: v for k, v in frame.f_globals.items() if not k.startswith("__")}
             extra_locals = {"_": return_value, **globals_dict, **frame.f_locals}
-
+            print("----->3")
             # 启动控制台, Console是brownie写的控制台类
             shell = Console(active_project, extra_locals)
+            print("----->4")
             shell.interact(banner="\nInteractive mode enabled. Use quit() to close.", exitmsg="")
 
     finally:
@@ -84,4 +95,5 @@ def main():
             for line in _build_gas_profile_output():
                 print(line)
 
-        sys.exit(exit_code)
+        if exit_code:
+            sys.exit(exit_code)
